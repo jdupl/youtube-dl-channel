@@ -59,11 +59,37 @@ class YoutubeApi:
 
 class PlaylistDownloader:
 
-    def __fetchVideos(self, playlist_id, start=1, limit=25):
-        return
+    video_count = 1
+    video_ids = []
 
-    def __fetchAllVideos(self, playlist_id, start, limit):
-        return
+    def __fetchVideos(self, playlist_id, start=1, limit=25):
+        data = YoutubeApi.getPlaylistsVideos(playlist_id, start, limit)
+        if('feed' in data and 'entry' in data['feed']):
+            videos = data['feed']['entry']
+            for video in videos:
+                self.video_ids.append(video['media$group']['yt$videoid']['$t'])
+                self.video_count += 1
+            return len(videos)
+        else:
+            return -1
+
+    def getAllVideos(self, playlist_id):
+        self.video_ids = []
+        self.video_count = 1
+        
+        data = YoutubeApi.getPlaylistsVideos(playlist_id, 1, 0)
+
+        video_total_count = data['feed']['openSearch$totalResults']['$t']
+        title = data['feed']['title']['$t']
+        print("Getting videos for playlist %s" % title)
+        playlist = {'id': playlist_id, 'title': title, 'video_ids': []}
+        videos_got = 0
+        while self.video_count <= video_total_count and videos_got > -1:
+            videos_got = self.__fetchVideos(playlist_id, self.video_count)
+        playlist['video_ids'] = self.video_ids
+        print("Got %d videos, expected %d" %
+        (len(self.video_ids), video_total_count))
+        return playlist
 
 
 class ChannelDownloader:
@@ -76,19 +102,15 @@ class ChannelDownloader:
         if(data['feed'] and data['feed']['entry']):
             playlists = data['feed']['entry']
             for playlist in playlists:
-                playlist_id = playlist['yt$playlistId']['$t']
-                playlist_name = playlist['title']['$t']
-                print(str(self.playlist_count) + " " + playlist_name)
-                self.playlist_count = self.playlist_count + 1
-                self.playlist_ids.append(playlist_id)
+                self.playlist_ids.append(playlist['yt$playlistId']['$t'])
+                self.playlist_count += 1
 
     def getAllPlaylists(self, channel_id):
         data = YoutubeApi.getUserPlaylists(channel_id, 1, 0)
         playlist_total_count = data['feed']['openSearch$totalResults']['$t']
-        print("Getting info for " + str(playlist_total_count) + " playlists")
         while self.playlist_count < playlist_total_count:
-            self.fetchPlaylists(channel_id, self.playlist_count)
-        print("ok")
+            self.__fetchPlaylists(channel_id, self.playlist_count)
+        return self.playlist_ids
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -96,5 +118,22 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         user = sys.argv[1]
-    downloader = ChannelDownloader()
-    downloader.getAllPlaylists(user)
+
+    channel_info = ChannelDownloader()
+    playlist_info = PlaylistDownloader()
+    playlists = []
+    total_video_count = 0
+    total_playlist_count = 0
+
+    print("Fetching user playlists...")
+    playlist_ids = channel_info.getAllPlaylists(user)
+    total_playlist_count = len(playlist_ids)
+    print("Got %d playlists" % total_playlist_count)
+
+    print("Fetching playlists videos...")
+    for playlist_id in playlist_ids:
+        p = playlist_info.getAllVideos(playlist_id)
+        playlists.append(p)
+        total_video_count += len(p['video_ids'])
+    print("Got %d videos to download in %d playlists" %
+     (total_video_count, total_playlist_count))
