@@ -9,7 +9,7 @@ This utility allows you to download all the playlists and/or videos from a chann
 
 ## Manual install
 
-Install my fork of [youtube-dl-playlist](https://github.com/jduplyoutube-dl-playlist)
+Install my fork of [youtube-dl-playlist](https://github.com/jdupl/youtube-dl-playlist)
 
 Download the python file and save to /usr/local/bin/youtube-dl-channel
 
