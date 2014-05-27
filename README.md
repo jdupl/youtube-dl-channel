@@ -7,6 +7,16 @@ This utility allows you to download all the playlists and/or videos from a chann
 
 `youtube-dl-channel USER [DESTINATION]`
 
+## Automatic install
+
+Download files from the repo
+
+`git clone https://github.com/jdupl/youtube-dl-channel.git`
+
+Execute the install script
+
+`sh youtube-dl-channel/install-youtube-dl.sh`
+
 ## Manual install
 
 Install my fork of [youtube-dl-playlist](https://github.com/jdupl/youtube-dl-playlist)
@@ -20,6 +30,3 @@ Give execute rights
 `sudo chmod a+x /usr/local/bin/youtube-dl-channel`
 
 
-## Automatic install
-
-TODO make simple script/tarball
