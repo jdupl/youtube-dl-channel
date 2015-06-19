@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 # youtube-dl-channel
 #
-# Utility to download Youtube a channel's playlists.
+# Utility to download Youtube a channel's playlists. Updated for api v3.
 # Inspired by https://github.com/jordoncm/youtube-dl-playlist
 #
 # Python 3.x support only !
@@ -18,54 +18,73 @@ from subprocess import call
 
 class YoutubeApi:
 
-    """Call youtube api and return json object of playlists from a user"""
-    def getUserPlaylists(channel_id, start, limit):
-        connection = http.client.HTTPConnection('gdata.youtube.com')
-        connection.request('GET', '/feeds/api/users/' + str(channel_id) +
-        '/playlists?' + urllib.parse.urlencode({
-                'alt': 'json',
-                'max-results': limit,
-                'start-index': start,
-                'v': 2
-            }))
+    def __init__(self, api_key):
+        self.api_key = api_key
+
+    def get_channel_id(self, user):
+        params = urllib.parse.urlencode({
+                'part': 'id',
+                'forUsername': user,
+                'key': self.api_key
+            })
+
+        connection = http.client.HTTPSConnection('www.googleapis.com')
+        connection.request('GET', '/youtube/v3/channels?' + params)
         response = connection.getresponse()
+        data = json.loads(response.read().decode('utf8'))
 
         if response.status != 200:
+            print(data.error.message)
+            exit(1)
+
+        if data['pageInfo']['totalResults'] != 1:
             print('Error: Not a valid/public user.')
-            print(start)
-            print(limit)
-            sys.exit(1)
-        data = response.read()
-        return json.loads(data.decode('utf8'))
+            exit(1)
 
+        return data['items'][0]['id']
 
-class ChannelDownloader:
+    def get_all_user_playlists(self, channel_id):
+        has_next_token = True
+        token = None
+        playlists = []
 
-    playlist_ids = []
-    playlist_count = 1
+        while has_next_token:
+            items, next_token = self._get_user_playlists(channel_id, token)
+            playlists.extend(items)
+            if next_token:
+                token = next_token
+                has_next_token = True
+            else:
+                has_next_token = False
+        return playlists
 
-    def __fetchPlaylists(self, channel_id, start=1, limit=25):
-        data = YoutubeApi.getUserPlaylists(channel_id, start, limit)
-        if(data['feed'] and data['feed']['entry']):
-            playlists = data['feed']['entry']
-            for playlist in playlists:
-                self.playlist_ids.append(playlist['yt$playlistId']['$t'])
-                self.playlist_count += 1
+    def _get_user_playlists(self, channel_id, page_token):
+        raw_params = {
+            'part': 'id',
+            'channelId': channel_id,
+            'key': self.api_key,
+            'maxResults': 50
+        }
 
-    def __getAllPlaylists(self, channel_id):
-        data = YoutubeApi.getUserPlaylists(channel_id, 1, 0)
-        playlist_total_count = data['feed']['openSearch$totalResults']['$t']
-        while self.playlist_count < playlist_total_count:
-            self.__fetchPlaylists(channel_id, self.playlist_count)
-        return self.playlist_ids
+        if page_token:
+            raw_params['pageToken'] = page_token
+        params = urllib.parse.urlencode(raw_params)
 
-    def download(self, channel_id, destination):
-        print("Fetching user playlists...")
-        playlist_ids = self.__getAllPlaylists(user)
-        total_playlist_count = len(playlist_ids)
-        print("Got %d playlists" % total_playlist_count)
-        for playlist_id in playlist_ids:
-            call(["youtube-dl-playlist", playlist_id, destination])
+        connection = http.client.HTTPSConnection('www.googleapis.com')
+        connection.request('GET', '/youtube/v3/playlists?' + params)
+
+        response = connection.getresponse()
+        data = json.loads(response.read().decode('utf8'))
+
+        if response.status != 200:
+            print(data['error']['message'])
+            exit(1)
+
+        next_token = None
+        if 'nextPageToken' in data:
+            next_token = data['nextPageToken']
+        return data['items'], next_token
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2 or len(sys.argv) > 3:
@@ -78,5 +97,15 @@ if __name__ == '__main__':
     else:
         destination = "."
 
-    channel_info = ChannelDownloader()
-    channel_info.download(user, destination)
+    api_key = 'AIzaSyDRAsVVqrWSRAK-WPrFM-A5IfyqK3XgmFs'
+    api = YoutubeApi(api_key)
+
+    print('Resolving user "{}" as a channel id...'.format(user))
+    channel_id = api.get_channel_id(user)
+    print('Got channel id {}'.format(channel_id))
+
+    playlists = api.get_all_user_playlists(channel_id)
+    print('Got {} playlists'.format(len(playlists)))
+
+    for playlist in playlists:
+        call(['youtube-dl-playlist'], playlist['id'], destination)
