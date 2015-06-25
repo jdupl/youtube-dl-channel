@@ -13,11 +13,12 @@ import sys
 import http.client
 import urllib.parse
 import json
+import os
+
 from subprocess import call
 
 
 class YoutubeApi:
-
     def __init__(self, api_key):
         self.api_key = api_key
 
@@ -27,7 +28,6 @@ class YoutubeApi:
                 'forUsername': user,
                 'key': self.api_key
             })
-
         connection = http.client.HTTPSConnection('www.googleapis.com')
         connection.request('GET', '/youtube/v3/channels?' + params)
         response = connection.getresponse()
@@ -60,7 +60,7 @@ class YoutubeApi:
 
     def _get_user_playlists(self, channel_id, page_token):
         raw_params = {
-            'part': 'id',
+            'part': 'snippet',
             'channelId': channel_id,
             'key': self.api_key,
             'maxResults': 50
@@ -83,7 +83,11 @@ class YoutubeApi:
         next_token = None
         if 'nextPageToken' in data:
             next_token = data['nextPageToken']
-        return data['items'], next_token
+
+        playlists = []
+        for playlist in data['items']:
+            playlists.append({'id': playlist['id'], 'name': playlist['snippet']['title']})
+        return playlists, next_token
 
 
 if __name__ == '__main__':
@@ -108,4 +112,5 @@ if __name__ == '__main__':
     print('Got {} playlists'.format(len(playlists)))
 
     for playlist in playlists:
-        call(['youtube-dl-playlist'], playlist['id'], destination)
+        playlist_dest = os.path.join(destination, playlist['name'])
+        call(['youtube-dl', '-o', os.path.join(playlist_dest, '%(playlist_index)s - %(title)s-%(id)s.%(ext)s'), playlist['id']])
