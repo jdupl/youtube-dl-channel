@@ -15,16 +15,6 @@ else
     $(chmod a+x /usr/local/bin/youtube-dl)
 fi
 
-# Check and install youtube-dl-playlist
-echo "Checking for youtube-dl-playlist"
-if [ -f "/usr/local/bin/youtube-dl-playlist" ]; then
-    echo "youtube-dl-playlist is already installed !"
-else
-    echo "Installing youtube-dl-playlist"
-    $(wget https://raw.githubusercontent.com/jdupl/youtube-dl-playlist/master/youtube-dl-playlist.py -O /usr/local/bin/youtube-dl-playlist)
-    $(chmod a+x /usr/local/bin/youtube-dl-playlist)
-fi
-
 # Check and install youtube-dl-channel
 echo "Looking for previous installations"
 if [ -f "/usr/local/bin/youtube-dl-channel" ]; then
@@ -34,5 +24,7 @@ else
     $(wget https://raw.githubusercontent.com/jdupl/youtube-dl-channel/master/youtube-dl-channel.py -O /usr/local/bin/youtube-dl-channel)
     $(chmod a+x /usr/local/bin/youtube-dl-channel)
 fi
+
+echo "To reinstall, delete either '/usr/local/bin/youtube-dl-channel' or '/usr/local/bin/youtube-dl' and run the script again."
 
 exit 0

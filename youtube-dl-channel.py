@@ -86,7 +86,10 @@ class YoutubeApi:
 
         playlists = []
         for playlist in data['items']:
-            playlists.append({'id': playlist['id'], 'name': playlist['snippet']['title']})
+            playlists.append({
+                'id': playlist['id'],
+                'name': playlist['snippet']['title']
+            })
         return playlists, next_token
 
 
@@ -113,4 +116,5 @@ if __name__ == '__main__':
 
     for playlist in playlists:
         playlist_dest = os.path.join(destination, playlist['name'])
-        call(['youtube-dl', '-o', os.path.join(playlist_dest, '%(playlist_index)s - %(title)s-%(id)s.%(ext)s'), playlist['id']])
+        call(['youtube-dl', '-o', os.path.join(playlist_dest,
+            '%(playlist_index)s - %(title)s-%(id)s.%(ext)s'), playlist['id']])
