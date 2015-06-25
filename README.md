@@ -15,9 +15,11 @@ Download files from the repo
 
 `git clone https://github.com/jdupl/youtube-dl-channel.git`
 
+`cd youtube-dl-channel`
+
 Execute the install script
 
-`sudo sh youtube-dl-channel/install-youtube-dl.sh`
+`sudo ./install-youtube-dl`
 
 ## Manual install
 
@@ -26,3 +28,5 @@ Execute the install script
 Give execute rights
 
 `sudo chmod a+x /usr/local/bin/youtube-dl-channel`
+
+Don't forget to install [youtube-dl](http://rg3.github.io/youtube-dl/).
