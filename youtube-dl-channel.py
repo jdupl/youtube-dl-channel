@@ -14,7 +14,7 @@ import http.client
 import urllib.parse
 import json
 import os
-import re #used to check youtube-user-id's pattern
+import re
 
 from subprocess import call
 
@@ -24,9 +24,9 @@ class YoutubeApi:
         self.api_key = api_key
 
     def get_channel_id(self, user):
-
-        if re.match(r'^[A-Z]+-[\w]+$', user): #FIXME improve this pattern checking
-            return user #user is the channel_id itself, if pattern matches
+        # FIXME improve pattern checking
+        if re.match(r'^[A-Z]+-[\w]+$', user):
+            return user  # User is the channel_id itself
 
         params = urllib.parse.urlencode({
                 'part': 'id',
